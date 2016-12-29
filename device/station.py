@@ -6,9 +6,11 @@ import time
 import click as click
 from AWSIoTPythonSDK.MQTTLib import AWSIoTMQTTClient
 
-TOPIC = 'station/data'
-
+MQTT_QOS_LEVEL = 0
+MQTT_TOPIC = 'station/data'
 CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
+
+logger = None
 
 
 def configure_logging(verbose):
@@ -63,15 +65,15 @@ def cli(ctx, endpoint, root_ca, cert, key, ws, client_id, verbose):
     ctx.obj['mqtt_client'] = mqtt_client
 
 
-@cli.command(short_help='Generate fake data samples and send them to AWS IoT.')
+@cli.command(short_help='Generate fake data samples and publish them to AWS IoT topic.')
 @click.option('--samples', '-s', type=int, default=10, help='How many fake data samples to generate.', show_default=True)
-@click.option('--delay', '-d', type=float, default=1, help='Delay (seconds) between sending each sample.', show_default=True)
+@click.option('--delay', '-d', type=float, default=1, help='Delay between sending each sensor reading, seconds.', show_default=True)
 @click.pass_context
 def samples(ctx, samples, delay):
     """Generate fake data samples and send them to AWS IoT."""
     mqtt_client = ctx.obj['mqtt_client']
 
-    logger.debug('Generating %d fake data samples with %d second(s) delay between', samples, delay)
+    logger.info('Generating %d fake data samples with %s second(s) delay between', samples, delay)
 
     samples_sent = 0
     while samples_sent < samples:
@@ -80,10 +82,41 @@ def samples(ctx, samples, delay):
         payload = {'station': mqtt_client._mqttCore.getClientID(), 'timestamp': time.time(), 'temperature': random.uniform(65, 75)}
         payload_str = json.dumps(payload)
 
-        mqtt_client.publish(TOPIC, payload_str, 1)
+        mqtt_client.publish(MQTT_TOPIC, payload_str, MQTT_QOS_LEVEL)
 
-        logger.info('Published sample data point {}/{} to topic [{}] ({})'.format(samples_sent, samples, TOPIC, payload_str))
+        logger.info('Published sample data point {}/{} to topic [{}] ({})'.format(samples_sent, samples, MQTT_TOPIC, payload_str))
         time.sleep(delay)
+
+
+@cli.command(short_help='Read sensor data and publish them to AWS IoT topic.')
+@click.option('--delay', '-d', type=float, default=1, help='Delay between sending each sensor reading, seconds.', show_default=True)
+@click.pass_context
+def run(ctx, delay):
+    """Generate fake data samples and send them to AWS IoT."""
+    mqtt_client = ctx.obj['mqtt_client']
+
+    logger.info('Reading data from sensor every %d second(s)', delay)
+
+    from w1thermsensor import W1ThermSensor
+    therm_sensor = W1ThermSensor()
+
+    while True:
+        temperature = therm_sensor.get_temperature(W1ThermSensor.DEGREES_F)
+        payload = get_payload(mqtt_client, temperature)
+        payload_str = json.dumps(payload)
+
+        mqtt_client.publish(MQTT_TOPIC, payload_str, MQTT_QOS_LEVEL)
+
+        logger.info('Published sample data point {}/{} to topic [{}] ({})'.format(samples_sent, samples, MQTT_TOPIC, payload_str))
+        time.sleep(delay)
+
+
+def get_payload(mqtt_client, temperature):
+    return {
+        'station': mqtt_client._mqttCore.getClientID(),
+        'timestamp': time.time(),
+        'temperature': temperature
+    }
 
 
 if __name__ == '__main__':
