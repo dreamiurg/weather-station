@@ -107,7 +107,7 @@ def run(ctx, delay):
 
         mqtt_client.publish(MQTT_TOPIC, payload_str, MQTT_QOS_LEVEL)
 
-        logger.info('Published sample data point {}/{} to topic [{}] ({})'.format(samples_sent, samples, MQTT_TOPIC, payload_str))
+        logger.info('Published data point to topic [{}] ({})'.format(MQTT_TOPIC, payload_str))
         time.sleep(delay)
 
 

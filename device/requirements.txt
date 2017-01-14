@@ -1,2 +1,3 @@
 AWSIoTPythonSDK==1.1.1
 click==6.6
+w1thermsensor==0.3.2
