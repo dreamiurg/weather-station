@@ -1,0 +1,25 @@
+service: weatherstation-api
+
+provider:
+  name: aws
+  runtime: python2.7
+  stage: dev
+  region: us-east-1
+  profile: serverless # name of the profile in ~/.aws/credentials
+  memorySize: 128
+  timeout: 10
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - dynamodb:DescribeTable
+        - dynamodb:Query
+        - dynamodb:Scan
+        - dynamodb:GetItem
+      Resource: 
+        #- "arn:aws:dynamodb:us-east-1:*:table/weather_last"
+        #- "arn:aws:dynamodb:us-east-1:*:table/weather_data_v4"
+        - "arn:aws:dynamodb:us-east-1:*:table/weather_*"
+
+functions:
+  get_latest_weather:
+    handler: handler.handler_get_latest_weather
