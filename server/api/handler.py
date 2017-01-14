@@ -13,17 +13,19 @@ def get_dynamo_client():
 
 def create_response(response_code=200, body=None):
     response = {
-        "statusCode": response_code,
-        "body": json.dumps(body)
+        'statusCode': response_code,
     }
+    if body is not None: 
+        response['body'] = body
+
     return response
 
-def get_latest_weather(client, station_name):
+def get_latest_weather(client, station):
     response = client.get_item(
     TableName='weather_last',
         Key={
             'station': {
-                'S': station_name,
+                'S': station,
             }
         },
         AttributesToGet=[
@@ -37,7 +39,7 @@ def get_latest_weather(client, station_name):
         return None
 
     return {
-        'station': station_name,
+        'station': station,
         'timestamp': item['timestamp']['N'],
         'temperature': item['temperature']['N']
     }
@@ -47,11 +49,11 @@ def handler_get_latest_weather(event, context):
     client = get_dynamo_client()
     logger.info('event = {}, context = {}'.format(event, context))
 
-    station_name = event.get('station')
+    station = event.get('station')
     if station is None:
         return create_response(404)
 
-    body = get_latest_weather(client, station_name)
+    body = get_latest_weather(client, station)
     if body is None:
         return create_response(404)
 
