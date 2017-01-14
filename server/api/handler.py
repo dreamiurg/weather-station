@@ -49,7 +49,11 @@ def handler_get_latest_weather(event, context):
     client = get_dynamo_client()
     logger.info('event = {}, context = {}'.format(event, context))
 
-    station = event.get('station')
+    query = event.get('query')
+    if query is None:
+        return create_response(404)
+
+    station = query.get('station')
     if station is None:
         return create_response(404)
 

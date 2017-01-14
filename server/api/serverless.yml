@@ -23,3 +23,12 @@ provider:
 functions:
   get_latest_weather:
     handler: handler.handler_get_latest_weather
+    events:
+      - http: 
+          path: weather/latest
+          method: get
+          integration: lambda
+          request:
+            parameters:
+              querystrings:
+                station: true
