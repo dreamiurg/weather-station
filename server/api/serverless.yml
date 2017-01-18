@@ -21,8 +21,8 @@ provider:
         - "arn:aws:dynamodb:us-east-1:*:table/weather_*"
 
 functions:
-  get_latest_weather:
-    handler: handler.handler_get_latest_weather
+  get_latest_report:
+    handler: handler.handler_get_latest_weather_report
     events:
       - http: 
           path: weather/latest
